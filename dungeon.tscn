@@ -8,10 +8,13 @@ script = ExtResource("1_v0iji")
 
 [node name="Walls" type="Node3D" parent="."]
 
-[node name="Viewpoint" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+[node name="Player" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 4)
 
-[node name="LightSource" type="OmniLight3D" parent="Viewpoint"]
+[node name="Viewpoint" type="Camera3D" parent="Player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+
+[node name="LightSource" type="OmniLight3D" parent="Player/Viewpoint"]
 omni_range = 4.501
 
 [node name="Sprite3D" type="Sprite3D" parent="."]

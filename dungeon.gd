@@ -1,6 +1,7 @@
 extends Node3D
 
-@onready var viewpoint := $Viewpoint
+@onready var player := $Player
+@onready var viewpoint := $Player/Viewpoint
 var input_locked := false
 var input_tween_duration := 0.25
 var collision_data: Array
@@ -30,8 +31,8 @@ func build(data: Array):
 				wall.position = Vector3(x, 0, y)
 				$Walls.add_child(wall)
 			elif cell.begins_with('p'):
-				viewpoint.position = Vector3(x, 0, y)
-				viewpoint.look_at(viewpoint.position + get_orientation_for_direction(cell[1]))
+				player.position = Vector3(x, player.position.y, y)
+				player.look_at(player.position + get_orientation_for_direction(cell[1]))
 
 
 func get_orientation_for_direction(dir: String):
@@ -63,6 +64,8 @@ func get_input():
 		return "move_left"
 	if Input.is_action_just_pressed("move_right"):
 		return "move_right"
+	if Input.is_action_just_pressed("flip"):
+		return "flip"
 	return null
 
 
@@ -78,21 +81,25 @@ func process_input():
 		input = queued_input
 	queued_input = null
 	
+	if input == "flip":
+		attempt_flip()
+		return
+	
 	var desired_pos = null
 	var desired_rot = null
-	var forward = viewpoint.global_transform.basis.z
+	var forward = player.global_transform.basis.z
 	if input == "move_forward":
-		desired_pos = viewpoint.position - forward
+		desired_pos = player.position - forward
 	if input == "move_back":
-		desired_pos = viewpoint.position + forward
+		desired_pos = player.position + forward
 	if input == "turn_left":
 		tween_viewpoint_rotation_by(PI/2)
 	if input == "turn_right":
 		tween_viewpoint_rotation_by(-PI/2)
 	if input == "move_left":
-		desired_pos = viewpoint.position - forward.rotated(Vector3.UP, PI/2)
+		desired_pos = player.position - forward.rotated(Vector3.UP, PI/2)
 	if input == "move_right":
-		desired_pos = viewpoint.position + forward.rotated(Vector3.UP, PI/2)
+		desired_pos = player.position + forward.rotated(Vector3.UP, PI/2)
 	
 	if desired_pos != null:
 		var is_blocked = collision_data[int(round(desired_pos.z))][int(round(desired_pos.x))].begins_with('w')
@@ -102,24 +109,31 @@ func process_input():
 			tween_viewpoint_bump_to(desired_pos)
 
 
+func attempt_flip():
+	input_locked = true
+	var tween = get_tree().create_tween()
+	tween.tween_property(player, "rotation:z", player.rotation.z + PI, input_tween_duration * 1.5)
+	tween.tween_callback(func(): input_locked = false)
+
+
 func tween_viewpoint_position_to(pos: Vector3):
 	input_locked = true
 	var tween = get_tree().create_tween()
-	tween.tween_property(viewpoint, "position", pos, input_tween_duration)
+	tween.tween_property(player, "position", pos, input_tween_duration)
 	tween.tween_callback(func(): input_locked = false)
 
 
 func tween_viewpoint_bump_to(pos: Vector3):
 	input_locked = true
 	var tween = get_tree().create_tween()
-	var delta = (pos - viewpoint.position) / 4
-	tween.tween_property(viewpoint, "position", viewpoint.position + delta, input_tween_duration/2)
-	tween.tween_property(viewpoint, "position", viewpoint.position, input_tween_duration/2)
+	var delta = (pos - player.position) / 4
+	tween.tween_property(player, "position", player.position + delta, input_tween_duration/2)
+	tween.tween_property(player, "position", player.position, input_tween_duration/2)
 	tween.tween_callback(func(): input_locked = false)
 
 
 func tween_viewpoint_rotation_by(delta: float):
 	input_locked = true
 	var tween = get_tree().create_tween()
-	tween.tween_property(viewpoint, "rotation:y", viewpoint.rotation.y + delta, input_tween_duration)
+	tween.tween_property(player, "rotation:y", player.rotation.y + delta, input_tween_duration)
 	tween.tween_callback(func(): input_locked = false)
